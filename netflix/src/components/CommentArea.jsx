@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Component } from "react";
 import CommentsList from "./CommentsList";
 import { Form, InputGroup, FormControl, Button, Alert } from "react-bootstrap";
 
@@ -13,6 +12,7 @@ const CommentArea = ({ movieId }) => {
   });
   useEffect(() => {
     fetchComments();
+    submitComment();
     setNewComment((c) => ({
       ...c,
       elementId: movieId,
@@ -33,8 +33,8 @@ const CommentArea = ({ movieId }) => {
       console.log(response);
       if (response.ok) {
         let comments = await response.json();
-
-        setError(false), setComments(comments);
+        setComments(comments);
+        setError(false);
       } else {
         console.log("error");
         setError(true);
@@ -44,17 +44,9 @@ const CommentArea = ({ movieId }) => {
       setError(true);
     }
   };
-  componentDidUpdate = (prevProps) => {
-    if (prevProps.movieId !== this.props.movieId) {
-      setNewComment((c) => ({
-        ...c,
-        elementId: movieId,
-      }));
-    }
-  };
 
-  submitComment = async (e) => {
-    e.preventDefault();
+  const submitComment = async (e) => {
+    // e.preventDefault();
     const COMMENTS_URL = "https://striveschool-api.herokuapp.com/api/comments/";
     try {
       const response = await fetch(COMMENTS_URL, {
@@ -62,7 +54,7 @@ const CommentArea = ({ movieId }) => {
         body: JSON.stringify(newComment),
         headers: {
           Authorization:
-            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MTUwNmRlY2RhMzE2MzAwMTVkNTEyM2YiLCJpYXQiOjE2MzI2NjA5NzIsImV4cCI6MTYzMzg3MDU3Mn0.vzSXzuRnbhUs7NjBPeeIiCBg6REuTwnoXE-R7Y-zU9Y",
+            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MTgyODk0ZGFhY2FhMjAwMTU1MmExNjMiLCJpYXQiOjE2MzY2NDAwMzUsImV4cCI6MTYzNzg0OTYzNX0.VG86lV20CDVqvjC9I1KfBdP08Y5tWlGW5utDd-dm5cU",
           "Content-Type": "application/json",
         },
       });
@@ -81,13 +73,13 @@ const CommentArea = ({ movieId }) => {
     }
   };
 
-  handleRadioChange = (rating) => {
+  const handleRadioChange = (rating) => {
     let newComment = setNewComment;
     newComment.rate = rating;
-    newComment({ newComment });
+    setNewComment({ newComment });
   };
 
-  handleCommentText = (e) => {
+  const handleCommentText = (e) => {
     let newComment = setNewComment;
     newComment.comment = e.currentTarget.value;
     setNewComment({ newComment });
