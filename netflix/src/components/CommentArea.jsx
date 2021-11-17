@@ -1,56 +1,55 @@
+import { useState, useEffect } from "react";
 import { Component } from "react";
 import CommentsList from "./CommentsList";
 import { Form, InputGroup, FormControl, Button, Alert } from "react-bootstrap";
 
-class CommentArea extends Component {
-  state = {
-    comments: [],
-    error: false,
-    newComment: {
-      comment: "",
-      rate: "3",
-      elementId: this.props.movieId,
-    },
-  };
+const CommentArea = ({ movieId }) => {
+  const [comments, setComments] = useState([]);
+  const [error, setError] = useState(false);
+  const [newComment, setNewComment] = useState({
+    comment: "",
+    rate: "3",
+    elementId: movieId,
+  });
+  useEffect(() => {
+    fetchComments();
+    setNewComment((c) => ({
+      ...c,
+      elementId: movieId,
+    }));
+  }, [movieId]);
 
-  componentDidUpdate = (prevProps) => {
-    if (prevProps.movieId !== this.props.movieId) {
-      this.setState(
+  const fetchComments = async () => {
+    try {
+      let response = await fetch(
+        "https://striveschool-api.herokuapp.com/api/comments/" + movieId,
         {
-          newComment: {
-            ...this.state.newComment,
-            elementId: this.props.movieId,
+          headers: {
+            Authorization:
+              "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MTUwNmRlY2RhMzE2MzAwMTVkNTEyM2YiLCJpYXQiOjE2MzI2NjA5NzIsImV4cCI6MTYzMzg3MDU3Mn0.vzSXzuRnbhUs7NjBPeeIiCBg6REuTwnoXE-R7Y-zU9Y",
           },
-        },
-        async () => {
-          try {
-            let response = await fetch(
-              "https://striveschool-api.herokuapp.com/api/comments/" +
-                this.props.movieId,
-              {
-                headers: {
-                  Authorization:
-                    "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MTUwNmRlY2RhMzE2MzAwMTVkNTEyM2YiLCJpYXQiOjE2MzI2NjA5NzIsImV4cCI6MTYzMzg3MDU3Mn0.vzSXzuRnbhUs7NjBPeeIiCBg6REuTwnoXE-R7Y-zU9Y",
-                },
-              }
-            );
-            console.log(response);
-            if (response.ok) {
-              let comments = await response.json();
-              this.setState({
-                comments: comments,
-                error: false,
-              });
-            } else {
-              console.log("error");
-              this.setState({ error: true });
-            }
-          } catch (error) {
-            console.log(error);
-            this.setState({ error: true });
-          }
         }
       );
+      console.log(response);
+      if (response.ok) {
+        let comments = await response.json();
+
+        setError(false), setComments(comments);
+      } else {
+        console.log("error");
+        setError(true);
+      }
+    } catch (error) {
+      console.log(error);
+      setError(true);
+    }
+  };
+  componentDidUpdate = (prevProps) => {
+    if (prevProps.movieId !== this.props.movieId) {
+      setNewComment((c) => ({
+        ...c,
+        elementId: movieId,
+      }));
     }
   };
 
@@ -60,7 +59,7 @@ class CommentArea extends Component {
     try {
       const response = await fetch(COMMENTS_URL, {
         method: "POST",
-        body: JSON.stringify(this.state.newComment),
+        body: JSON.stringify(newComment),
         headers: {
           Authorization:
             "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MTUwNmRlY2RhMzE2MzAwMTVkNTEyM2YiLCJpYXQiOjE2MzI2NjA5NzIsImV4cCI6MTYzMzg3MDU3Mn0.vzSXzuRnbhUs7NjBPeeIiCBg6REuTwnoXE-R7Y-zU9Y",
@@ -69,12 +68,10 @@ class CommentArea extends Component {
       });
       if (response.ok) {
         alert("Comment added");
-        this.setState({
-          newComment: {
-            comment: "",
-            rate: 0,
-            elementId: this.props.movieId,
-          },
+        setNewComment({
+          comment: "",
+          rate: 0,
+          elementId: movieId,
         });
       } else {
         alert("An error has occurred");
@@ -85,97 +82,93 @@ class CommentArea extends Component {
   };
 
   handleRadioChange = (rating) => {
-    let newComment = this.state.newComment;
+    let newComment = setNewComment;
     newComment.rate = rating;
-    this.setState({ newComment });
+    newComment({ newComment });
   };
 
   handleCommentText = (e) => {
-    let newComment = this.state.newComment;
+    let newComment = setNewComment;
     newComment.comment = e.currentTarget.value;
-    this.setState({ newComment });
+    setNewComment({ newComment });
   };
 
-  render() {
-    return (
-      <div className="my-3">
-        {this.state.error && (
-          <Alert variant="danger" className="text-center">
-            Error fetching comments
-          </Alert>
-        )}
-        {this.state.comments.length > 0 &&
-          this.state.comments[0].elementId === this.props.movieId && (
-            <CommentsList comments={this.state.comments} />
-          )}
-        <div className="text-center">
-          <h5 className="my-3">Add a comment</h5>
-          <Form onSubmit={this.submitComment}>
-            <div className="my-3 text-center">
-              <Form.Check
-                inline
-                label="1"
-                value="1"
-                type="radio"
-                name="rating"
-                defaultChecked={this.state.newComment.rate === "1"}
-                onClick={() => this.handleRadioChange("1")}
-              />
-              <Form.Check
-                inline
-                label="2"
-                value="2"
-                type="radio"
-                name="rating"
-                defaultChecked={this.state.newComment.rate === "2"}
-                onClick={() => this.handleRadioChange("2")}
-              />
-              <Form.Check
-                inline
-                label="3"
-                value="3"
-                type="radio"
-                name="rating"
-                defaultChecked={this.state.newComment.rate === "3"}
-                onClick={() => this.handleRadioChange("3")}
-              />
-              <Form.Check
-                inline
-                label="4"
-                value="4"
-                type="radio"
-                name="rating"
-                defaultChecked={this.state.newComment.rate === "4"}
-                onClick={() => this.handleRadioChange("4")}
-              />
-              <Form.Check
-                inline
-                label="5"
-                value="5"
-                type="radio"
-                name="rating"
-                defaultChecked={this.state.newComment.rate === "5"}
-                onClick={() => this.handleRadioChange("5")}
-              />
-            </div>
-            <InputGroup className="mb-3">
-              <FormControl
-                placeholder="Write your comment"
-                aria-label="comment"
-                aria-describedby="basic-addon1"
-                onChange={this.handleCommentText}
-                value={this.state.newComment.comment}
-                required
-              />
-            </InputGroup>
-            <Button variant="primary" type="submit">
-              Submit
-            </Button>
-          </Form>
-        </div>
+  return (
+    <div className="my-3">
+      {setError && (
+        <Alert variant="danger" className="text-center">
+          Error fetching comments
+        </Alert>
+      )}
+      {comments.length > 0 && comments[0].elementId === movieId && (
+        <CommentsList comments={comments} />
+      )}
+      <div className="text-center">
+        <h5 className="my-3">Add a comment</h5>
+        <Form onSubmit={submitComment}>
+          <div className="my-3 text-center">
+            <Form.Check
+              inline
+              label="1"
+              value="1"
+              type="radio"
+              name="rating"
+              defaultChecked={newComment.rate === "1"}
+              onClick={() => handleRadioChange("1")}
+            />
+            <Form.Check
+              inline
+              label="2"
+              value="2"
+              type="radio"
+              name="rating"
+              defaultChecked={newComment.rate === "2"}
+              onClick={() => handleRadioChange("2")}
+            />
+            <Form.Check
+              inline
+              label="3"
+              value="3"
+              type="radio"
+              name="rating"
+              defaultChecked={newComment.rate === "3"}
+              onClick={() => handleRadioChange("3")}
+            />
+            <Form.Check
+              inline
+              label="4"
+              value="4"
+              type="radio"
+              name="rating"
+              defaultChecked={newComment.rate === "4"}
+              onClick={() => handleRadioChange("4")}
+            />
+            <Form.Check
+              inline
+              label="5"
+              value="5"
+              type="radio"
+              name="rating"
+              defaultChecked={newComment.rate === "5"}
+              onClick={() => handleRadioChange("5")}
+            />
+          </div>
+          <InputGroup className="mb-3">
+            <FormControl
+              placeholder="Write your comment"
+              aria-label="comment"
+              aria-describedby="basic-addon1"
+              onChange={handleCommentText}
+              value={newComment.comment}
+              required
+            />
+          </InputGroup>
+          <Button variant="primary" type="submit">
+            Submit
+          </Button>
+        </Form>
       </div>
-    );
-  }
-}
-
+    </div>
+  );
+};
 export default CommentArea;
